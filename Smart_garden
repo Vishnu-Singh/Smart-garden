@@ -1,0 +1,95 @@
+#define DHTTYPE DHT11
+#define DHTPIN 12
+#define BLYNK_PRINT DebugSerial
+#include<SoftwareSerial.h>
+#include<DHT.h>
+SoftwareSerial DebugSerial(2,3);
+#include<BlynkSimpleStream.h>
+
+char auth[]="i2ctlQfe75Lu6DsXNCvZpbUBuinHf4Qx";
+
+const int ir_pin=4;
+const int ldr_pin=5;
+const int mois_pin=A0;
+const int pump=6;
+const int past=7;
+
+DHT dht(DHTPIN,DHTTYPE);
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(pump,OUTPUT);
+  pinMode(past,OUTPUT);
+  pinMode(ir_pin,INPUT);
+  pinMode(ldr_pin,INPUT);
+  pinMode(mois_pin,INPUT);
+  Serial.begin(9600);
+  Blynk.begin(Serial,auth);
+  dht.begin();
+  
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  Blynk.run();
+  check_ir();
+  getTemp();
+  getHumi();
+  check_light();
+}
+
+void check_ir(){
+  if(digitalRead(ir_pin)==HIGH){
+    Blynk.virtualWrite(V10,"found");
+  }else{
+    Blynk.virtualWrite(V10,".....");
+  }
+}
+
+void getTemp(){
+  int val=dht.readTemperature();
+  Blynk.virtualWrite(V11,val);
+}
+
+void getHumi(){
+  int val=dht.readHumidity();
+  Blynk.virtualWrite(V12,val);
+  
+}
+
+void check_light(){
+  if(digitalRead(ldr_pin)==LOW){
+    Blynk.virtualWrite(V13,"Light");
+  }else{
+    Blynk.virtualWrite(V13,".....");
+  }
+}
+
+
+void getMois(){
+  int val=analogRead(mois_pin);
+  Blynk.virtualWrite(V14,val);
+}
+
+BLYNK_WRITE(V8){
+  int val=param.asInt();
+  if(val){
+    digitalWrite(past,HIGH);
+    Blynk.virtualWrite(V15,"On");
+  }else{
+    digitalWrite(past,LOW);
+    Blynk.virtualWrite(V15,"...");
+  }
+}
+
+
+BLYNK_WRITE(V7){
+  int val=param.asInt();
+  if(val){
+    digitalWrite(pump,HIGH);
+    Blynk.virtualWrite(V16,"On");
+    
+  }else{
+    digitalWrite(pump,LOW);
+    Blynk.virtualWrite(V16,"...");
+  }
+}
